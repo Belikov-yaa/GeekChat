@@ -57,9 +57,10 @@ public class ClientHandler {
                             sendMsg(Command.END);
                             System.out.println("client disconnected");
                             break;
-                        }
-
-                        server.broadcastMsg(this, str);
+                        } else if (str.startsWith(Command.PERSONAL_MSG)) {
+                            String[] token = str.split("\\s+", 3);
+                            server.sendPersonalMsg(this, token[1], token[2]);
+                        } else server.broadcastMsg(this, str);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

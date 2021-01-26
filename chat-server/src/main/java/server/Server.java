@@ -45,6 +45,13 @@ public class Server {
         }
     }
 
+    public void sendPersonalMsg(ClientHandler clientHandler, String receiverName, String msg) {
+        String message = String.format("[ %s ]: %s", clientHandler.getNickname(), msg);
+        clients.stream()
+                .filter(p -> p.getNickname().equals(receiverName) || p == clientHandler)
+                .forEach(c -> c.sendMsg(message));
+    }
+
     void subscribe(ClientHandler clientHandler){
         clients.add(clientHandler);
     }
