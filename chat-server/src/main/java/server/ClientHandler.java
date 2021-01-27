@@ -13,6 +13,7 @@ public class ClientHandler {
     private DataInputStream in;
     private DataOutputStream out;
     private String nickname;
+    private String login;
 
     public ClientHandler(server.Server server, Socket socket) {
         try {
@@ -31,12 +32,17 @@ public class ClientHandler {
                             String[] token = str.split("\\s");
                             String newNick = server.getAuthService()
                                     .getNicknameByLoginAndPassword(token[1], token[2]);
+                            login = token[1];
                             if (newNick != null) {
-                                nickname = newNick;
-                                sendMsg(Command.AUTH_OK + " " + nickname);
-                                server.subscribe(this);
-                                System.out.println("client " + nickname + " connected " + socket.getRemoteSocketAddress());
-                                break;
+                                if (!server.isLoginAuthenticated(login)) {
+                                    nickname = newNick;
+                                    sendMsg(Command.AUTH_OK + " " + nickname);
+                                    server.subscribe(this);
+                                    System.out.println("client " + nickname + " connected " + socket.getRemoteSocketAddress());
+                                    break;
+                                } else {
+                                    sendMsg("Логин уже используется");
+                                }
                             } else {
                                 sendMsg("Неверный логин / пароль");
                             }
@@ -44,9 +50,22 @@ public class ClientHandler {
 
                         if (str.equals(Command.END)) {
                             sendMsg(Command.END);
-                            System.out.println("client disconnected");
-                            break;
+                            throw new RuntimeException("client disconnected");
                         }
+
+                        if (str.startsWith(Command.REG)) {
+                            String[] token = str.split("\\s");
+                            if (token.length < 4) {
+                                continue;
+                            }
+                            boolean isRegistered = server.getAuthService().registration(token[1], token[2], token[3]);
+                            if (isRegistered) {
+                                sendMsg(Command.REG_OK);
+                            } else {
+                                sendMsg(Command.REG_NO);
+                            }
+                        }
+
                     }
 
                     //цикл работы
@@ -57,9 +76,11 @@ public class ClientHandler {
                             sendMsg(Command.END);
                             System.out.println("client disconnected");
                             break;
-                        }
-
-                        server.broadcastMsg(this, str);
+                        } else if (str.startsWith(Command.PERSONAL_MSG)) {
+                            String[] token = str.split("\\s+", 3);
+                            if (token.length < 3) continue;
+                            server.sendPersonalMsg(this, token[1], token[2]);
+                        } else server.broadcastMsg(this, str);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -72,6 +93,8 @@ public class ClientHandler {
                     }
                 }
             }).start();
+        } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -87,5 +110,9 @@ public class ClientHandler {
 
     public String getNickname() {
         return nickname;
+    }
+
+    public String getLogin() {
+        return login;
     }
 }
