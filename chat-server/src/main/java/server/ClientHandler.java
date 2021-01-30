@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class ClientHandler {
     private Server server;
@@ -14,6 +15,8 @@ public class ClientHandler {
     private DataOutputStream out;
     private String nickname;
     private String login;
+
+    private static final int NO_AUTH_TIMEOUT = 120000;
 
     public ClientHandler(server.Server server, Socket socket) {
         try {
@@ -25,6 +28,7 @@ public class ClientHandler {
             new Thread(() -> {
                 try {
                     //цикл аутентификации
+                    socket.setSoTimeout(NO_AUTH_TIMEOUT);
                     while (true) {
                         String str = in.readUTF();
 
@@ -39,6 +43,7 @@ public class ClientHandler {
                                     sendMsg(Command.AUTH_OK + " " + nickname);
                                     server.subscribe(this);
                                     System.out.println("client " + nickname + " connected " + socket.getRemoteSocketAddress());
+                                    socket.setSoTimeout(0);
                                     break;
                                 } else {
                                     sendMsg("Логин уже используется");
@@ -84,6 +89,9 @@ public class ClientHandler {
                         } else
                         server.broadcastMsg(this, str);
                     }
+                } catch (SocketTimeoutException e) {
+                    sendMsg(Command.END);
+                    System.out.println("client disconnected");
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
