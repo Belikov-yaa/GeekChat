@@ -71,16 +71,18 @@ public class ClientHandler {
                     //цикл работы
                     while (true) {
                         String str = in.readUTF();
-
-                        if (str.equals(Command.END)) {
-                            sendMsg(Command.END);
-                            System.out.println("client disconnected");
-                            break;
-                        } else if (str.startsWith(Command.PERSONAL_MSG)) {
-                            String[] token = str.split("\\s+", 3);
-                            if (token.length < 3) continue;
-                            server.sendPersonalMsg(this, token[1], token[2]);
-                        } else server.broadcastMsg(this, str);
+                        if (str.startsWith("/")) {
+                            if (str.equals(Command.END)) {
+                                sendMsg(Command.END);
+                                System.out.println("client disconnected");
+                                break;
+                            } else if (str.startsWith(Command.PERSONAL_MSG)) {
+                                String[] token = str.split("\\s+", 3);
+                                if (token.length < 3) continue;
+                                server.sendPersonalMsg(this, token[1], token[2]);
+                            }
+                        } else
+                        server.broadcastMsg(this, str);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
