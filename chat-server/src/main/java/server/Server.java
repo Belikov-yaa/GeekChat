@@ -12,12 +12,13 @@ public class Server {
     private ServerSocket server;
     private Socket socket;
     private final int PORT = 8189;
-    private List<ClientHandler> clients;
-    private AuthService authService;
+    private final List<ClientHandler> clients;
+    private final AuthService authService;
 
     public Server() {
         clients = new CopyOnWriteArrayList<>();
-        authService = new SimpleAuthService();
+//        authService = new SimpleAuthService();
+        authService = new SQLiteAuthService();
 
         try {
             server = new ServerSocket(PORT);
@@ -34,6 +35,7 @@ public class Server {
         } finally {
             try {
                 server.close();
+                authService.disconnect();
             } catch (IOException e) {
                 e.printStackTrace();
             }
