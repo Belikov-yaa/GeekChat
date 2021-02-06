@@ -197,6 +197,7 @@ public class Controller implements Initializable {
                 StringBuilder sb = new StringBuilder();
                 history.forEach(x -> sb.append(x+"\n"));
                 textArea.appendText(sb.toString());
+                history.clear();
             } catch (IOException e) {
                 e.printStackTrace();
             }
