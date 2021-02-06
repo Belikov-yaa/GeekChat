@@ -7,7 +7,4 @@ public interface AuthService {
 
     boolean changeNick(String oldNick, String newNick);
 
-//    void connect();
-//
-//    void disconnect();
 }

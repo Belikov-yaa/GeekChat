@@ -18,11 +18,11 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -44,6 +44,10 @@ public class Controller implements Initializable {
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+
+    //    private BufferedReader inFileHistory;
+    private BufferedWriter outFileHistory;
+
     private final String IP_ADDRESS = "localhost";
     private final int PORT = 8189;
 
@@ -53,6 +57,7 @@ public class Controller implements Initializable {
     private Stage stage;
     private Stage regStage;
     private RegController regController;
+    private List<String> history;
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
@@ -71,6 +76,7 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        history = new ArrayList<>();
         Platform.runLater(() -> {
             stage = (Stage) textArea.getScene().getWindow();
             stage.setOnCloseRequest(event -> {
@@ -103,6 +109,8 @@ public class Controller implements Initializable {
                             if (str.startsWith(Command.AUTH_OK)) {
                                 nickname = str.split("\\s")[1];
                                 setAuthenticated(true);
+                                getHistoryFromFile();
+                                outFileHistory = new BufferedWriter(new FileWriter(String.format("log/history_%s.txt", nickname), true));
                                 break;
                             }
 
@@ -151,6 +159,7 @@ public class Controller implements Initializable {
                                 }
                             }
                         } else {
+                            outFileHistory.write(str + "\n");
                             textArea.appendText(str + "\n");
                         }
                     }
@@ -161,6 +170,8 @@ public class Controller implements Initializable {
                 } finally {
                     setAuthenticated(false);
                     try {
+                        outFileHistory.flush();
+                        outFileHistory.close();
                         socket.close();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -170,6 +181,32 @@ public class Controller implements Initializable {
 
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void getHistoryFromFile() {
+        File fileName = new File(String.format("log/history_%s.txt", nickname));
+        if (fileName.exists()) {
+            try (BufferedReader inputFileHistory = new BufferedReader(new FileReader(fileName))) {
+                String line;
+                while ((line = inputFileHistory.readLine()) != null) {
+                    history.add(line);
+                }
+                if (history.size() > 100)
+                    history = new ArrayList<>(history.subList(history.size() - 100, history.size() - 1));
+                StringBuilder sb = new StringBuilder();
+                history.forEach(x -> sb.append(x+"\n"));
+                textArea.appendText(sb.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                fileName.createNewFile();
+            } catch (IOException e) {
+                System.out.println("Не удалось создать файл с историей");
+                e.printStackTrace();
+            }
         }
     }
 
@@ -211,6 +248,7 @@ public class Controller implements Initializable {
         System.out.println(clientList.getSelectionModel().getSelectedItem());
         String receiver = clientList.getSelectionModel().getSelectedItem();
         textField.setText(String.format("%s %s ", Command.PERSONAL_MSG, receiver));
+        textField.requestFocus();
     }
 
     public void registration(ActionEvent actionEvent) {
