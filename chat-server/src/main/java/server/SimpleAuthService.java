@@ -50,12 +50,8 @@ public class SimpleAuthService implements AuthService {
     }
 
     @Override
-    public void connect() {
-
+    public boolean changeNick(String oldNick, String newNick) {
+        return false;
     }
 
-    @Override
-    public void disconnect() {
-
-    }
 }

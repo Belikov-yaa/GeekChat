@@ -44,6 +44,7 @@ public class ClientHandler {
                                     server.subscribe(this);
                                     System.out.println("client " + nickname + " connected " + socket.getRemoteSocketAddress());
                                     socket.setSoTimeout(0);
+                                    sendMsg(SQLiteService.getMessagesFromDB(nickname));
                                     break;
                                 } else {
                                     sendMsg("Логин уже используется");

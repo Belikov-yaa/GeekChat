@@ -5,7 +5,9 @@ public interface AuthService {
 
     boolean registration(String login, String password, String nickname);
 
-    void connect();
+    boolean changeNick(String oldNick, String newNick);
 
-    void disconnect();
+//    void connect();
+//
+//    void disconnect();
 }
