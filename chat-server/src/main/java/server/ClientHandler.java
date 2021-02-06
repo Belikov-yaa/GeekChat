@@ -86,9 +86,24 @@ public class ClientHandler {
                                 String[] token = str.split("\\s+", 3);
                                 if (token.length < 3) continue;
                                 server.sendPersonalMsg(this, token[1], token[2]);
+                            } else if (str.startsWith(Command.CHANGE_NICK)) {
+                                String[] token = str.split("\\s+");
+                                if (token.length == 2) {
+                                    if (server.getAuthService().changeNick(nickname, token[1])) {
+                                        nickname = token[1];
+                                        sendMsg(Command.CHANGE_NICK + " " + token[1]);
+                                        sendMsg(String.format("Теперь тебя зовут '%s'", nickname));
+                                        server.broadcastClientList();
+                                    } else {
+                                        sendMsg(String.format("Нельзя изменить ник на '%s'. Такой ник уже существует", token[1]));
+                                    }
+                                } else if (token.length > 2)
+                                    sendMsg("Nickname не должен содержать пробелов");
+                                continue;
                             }
+
                         } else
-                        server.broadcastMsg(this, str);
+                            server.broadcastMsg(this, str);
                     }
                 } catch (SocketTimeoutException e) {
                     sendMsg(Command.END);

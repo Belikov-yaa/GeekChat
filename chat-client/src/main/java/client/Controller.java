@@ -143,6 +143,13 @@ public class Controller implements Initializable {
                                     }
                                 });
                             }
+                            if (str.startsWith(Command.CHANGE_NICK)) {
+                                String[] tokens = str.split("\\s+");
+                                if (tokens.length == 2) {
+                                    nickname = tokens[1];
+                                    setTitle(nickname);
+                                }
+                            }
                         } else {
                             textArea.appendText(str + "\n");
                         }
@@ -207,7 +214,7 @@ public class Controller implements Initializable {
     }
 
     public void registration(ActionEvent actionEvent) {
-        if (regStage==null) {
+        if (regStage == null) {
             createRegWindow();
         }
         regStage.show();
