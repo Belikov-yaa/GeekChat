@@ -12,12 +12,14 @@ public class Server {
     private ServerSocket server;
     private Socket socket;
     private final int PORT = 8189;
-    private List<ClientHandler> clients;
-    private AuthService authService;
+    private final List<ClientHandler> clients;
+    private final AuthService authService;
 
     public Server() {
         clients = new CopyOnWriteArrayList<>();
-        authService = new SimpleAuthService();
+//        authService = new SimpleAuthService();
+        if (!SQLiteService.connect()) throw new RuntimeException("Не удалось подключиться к БД");
+        authService = new DBAuthService();
 
         try {
             server = new ServerSocket(PORT);
@@ -32,6 +34,7 @@ public class Server {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
+            SQLiteService.disconnect();
             try {
                 server.close();
             } catch (IOException e) {
@@ -42,10 +45,13 @@ public class Server {
 
     public void broadcastMsg(ClientHandler clientHandler, String msg) {
         String message = String.format("[ %s ]: %s", clientHandler.getNickname(), msg);
+        if (!SQLiteService.writeMessage(clientHandler.getNickname(),"", msg))
+            System.out.println("Сообщение не записалось");
         for (ClientHandler c : clients) {
             c.sendMsg(message);
         }
     }
+
     public void broadcastClientList() {
         StringBuilder stringBuilder = new StringBuilder(Command.CLIENT_LIST);
         for (ClientHandler c : clients) {
@@ -60,6 +66,9 @@ public class Server {
         for (ClientHandler c : clients) {
             if (c.getNickname().equals(receiver)) {
                 c.sendMsg(message);
+                if (!SQLiteService.writeMessage(sender.getNickname(), c.getNickname(), msg)) {
+                    throw new RuntimeException("Не удалось записать сообщение в БД");
+                }
                 if (!c.equals(sender)) {
                     sender.sendMsg(message);
                 }
